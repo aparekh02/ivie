@@ -1,0 +1,9 @@
+{
+ "fixtures": [
+  "circom_multiplier_bn128",
+  "circom_multiplier_bls12381",
+  "circom_sum_of_squares_bn128",
+  "circom_sum_of_squares_bls12381",
+  "circom_nullifier_bn128"
+ ]
+}

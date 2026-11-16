@@ -1,0 +1,6 @@
+node_modules/
+chain/.run/
+circuits/build/
+contracts/out/
+contracts/cache/
+e2e/reports/
