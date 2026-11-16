@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/zknet-core", "crates/zknetd", "crates/zknet-sdk", "crates/prover"]
+members = ["crates/zknet-core", "crates/zknetd", "crates/zknet-sdk", "crates/prover", "crates/rollup"]
 
 [workspace.package]
 edition = "2024"
@@ -11,16 +11,15 @@ license = "MIT"
 zknet-core = { path = "crates/zknet-core" }
 zknet-sdk = { path = "crates/zknet-sdk" }
 alloy-primitives = { version = "1", features = ["serde"] }
-ark-bn254 = "0.6"
-ark-bls12-381 = "0.6"
-ark-ec = "0.6"
 ark-ff = "0.6"
+ark-poly = "0.6"
+alloy-sol-types = "1"
+rayon = "1"
 
-num-bigint = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 anyhow = "1"
 
 [profile.dev.package."*"]
-opt-level = 3 # pairings are unusable at opt-level 0
+opt-level = 3 # field arithmetic and FFTs are unusable at opt-level 0

@@ -1,0 +1,19 @@
+[package]
+name = "rollup"
+description = "zknet L2: sequencer + STARK prover posting batches to ZKRollup.sol"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "zkrollup"
+path = "src/main.rs"
+
+[dependencies]
+zknet-core.workspace = true
+alloy = { version = "2", default-features = false, features = ["std", "providers", "provider-http", "reqwest", "signer-local", "network", "rpc-types", "sol-types", "json-rpc", "rpc-client", "transports"] }
+tokio = { version = "1", features = ["full"] }
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+clap = { version = "4", features = ["derive", "env"] }

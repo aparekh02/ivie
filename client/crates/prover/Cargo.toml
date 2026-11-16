@@ -1,16 +1,8 @@
 [package]
 name = "prover"
-description = "Scratch space for building a Groth16 prover against zknet"
 edition.workspace = true
 version.workspace = true
 license.workspace = true
 
 [dependencies]
 zknet-sdk.workspace = true
-ark-groth16 = "0.6"
-ark-relations = "0.6"
-ark-snark = "0.6"
-ark-std = { version = "0.6", features = ["std"] }
-ark-ec.workspace = true
-ark-ff.workspace = true
-anyhow.workspace = true

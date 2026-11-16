@@ -1,163 +1,142 @@
 # zknet client (Rust)
 
-A light client for zknet, and a Unix socket that local programs (your prover)
-plug into.
+The rollup's STARK prover and verifier, a light client for the L1 nodes, and
+a Unix socket that local programs plug into.
 
 ```
                       newline-delimited JSON-RPC 2.0
- your prover ──┐      over chain/.run/zknetd.sock          ┌── fast   anvil :9545 (mines on tx)
+ your program ─┐      over chain/.run/zknetd.sock          ┌── fast   anvil :9545 (mines on tx)
  nc / python ──┼──►  zknetd  ── alloy HTTP JSON-RPC ───────┤
- watch / ...  ─┘     (native verifier, signer,             └── strict anvil :9546 (12 s slots)
-                      head + event follower)
+ watch / ...  ─┘     (native STARK verifier,               └── strict anvil :9546 (12 s slots)
+                      head + rollup event follower)
+ zkrollup (sequencer + prover) ── signs commitBatch / finalizeBatch on L1
 ```
 
 | crate | what |
 |---|---|
-| `zknet-core` | snarkjs JSON into on-chain bytes, circuit ids, and a **native Groth16 verifier** (arkworks) that follows the Solidity rules exactly. It is tested against all 317 vectors in `contracts/test/vectors`. No networking. |
-| `zknetd` | The daemon. It follows both nodes (heads, `CircuitRegistered`, `ProofVerified`), deploys the registry via CREATE2 if missing, signs with an anvil dev key, and serves the socket. |
-| `zknet-sdk` | Blocking Rust client for the socket (no async runtime needed), plus examples. |
+| `zknet-core` | `stark`: field, in-AIR hash, L2 state tree, AIR, prover (honest and adversarial), native verifier matching `StarkVerifier.sol`. `api`: socket wire types. No networking. |
+| `zknetd` | Read-only daemon: follows both nodes (heads, `BatchCommitted`, `BatchFinalized`, `BatchesReverted`) and serves the socket. It never signs. |
+| `zknet-sdk` | Blocking socket client and the STARK verifier as a raw oracle (`Native` / `Chain`), plus the `watch` example. |
+| `rollup` | `zkrollup`: deployer, sequencer, prover and attack harness for `ZKRollup.sol`. Signs with anvil dev key 4, and only for nodes that report as anvil. |
+| `prover` | Research scratch file. |
 
-It is not a full node. reth cannot follow anvil, because anvil has no p2p
+It is not a full node. reth can't follow anvil, because anvil has no p2p
 and no engine API. So this is a thin client built on **alloy**, the RPC and
-primitives stack reth itself uses. It also uses **arkworks** for the curve math.
+primitives stack reth itself uses, with **arkworks** for field arithmetic
+and FFTs.
 
 ## Run
 
 ```
 npm run chain:start:fast                        # :9545
 ZKNET_PORT=9546 npm run chain:start             # :9546, strict 12 s slots (optional)
-cd client && cargo run --release -p zknetd      # socket at chain/.run/zknetd.sock
+cd contracts && forge build && cd ../client
+cargo run --release -p rollup -- deploy
+cargo run --release -p zknetd                   # socket at chain/.run/zknetd.sock
 ```
 
-Then, in another terminal:
+Then:
 
 ```
-cargo run --release -p zknet-sdk --example playground          # real + tampered proofs, native vs chain
-cargo run --release -p zknet-sdk --example playground -- --curve bls12381 --node strict
-cargo run --release -p zknet-sdk --example ark_prover          # arkworks prover -> register -> verify -> submit
-cargo run --release -p zknet-sdk --example watch               # live heads + registry events
-cargo test  --release -p zknet-core                            # native verifier vs all 317 vectors
+cargo run --release -p rollup -- run -n 3 -b 4          # commit -> prove -> finalize
+cargo run --release -p rollup -- attack                 # lies the contract refuses
+cargo run --release -p zknet-sdk --example watch        # live heads + batch events
+cargo run --release -p prover [-- chain]                # scratch: native or EVM oracle
+cargo test --release                                    # prover/verifier + native-vs-chain differential
 ```
 
 From any language:
 
 ```
-echo '{"jsonrpc":"2.0","id":1,"method":"zk_status"}' | nc -U chain/.run/zknetd.sock
+echo '{"jsonrpc":"2.0","id":1,"method":"zk_rollup"}' | nc -U chain/.run/zknetd.sock
 echo '{"jsonrpc":"2.0","id":2,"method":"eth_blockNumber","node":"strict"}' | nc -U chain/.run/zknetd.sock
 ```
 
 Daemon flags: `--node name=url` (repeatable; the first one is the default),
-`--socket`, `--key-index` (default 3, so its nonces never collide with
-`e2e/run.mjs` or `submit.mjs`, which use key 0), `--no-deploy`, `--poll-ms`.
-Set `RUST_LOG=zknetd=debug` for per-request timing.
+`--socket`, `--root`, `--poll-ms`. Set `RUST_LOG=zknetd=debug` for
+per-request timing.
 
 ## Protocol
 
 One JSON object per line in each direction. Every `zk_*` method takes an
-optional `"node": "fast" | "strict"` in its params. For forwarded methods,
-put `"node"` at the top level of the request.
+optional `"node": "fast" | "strict"`, either in its params or at the top
+level of the request.
 
 | method | params | result |
 |---|---|---|
-| `zk_status` | - | nodes, heads, registry, signer |
-| `zk_circuitId` | `{vk}` or `{rawVk, curve}` | id, raw VK, nPublic, `vkProblem` (would `register` refuse it?) |
-| `zk_encode` | `{proof, curve}` | on-chain proof bytes |
-| `zk_verifyLocal` | VerifyParams | native verdict only |
-| `zk_verify` | VerifyParams | native verdict, `eth_call verify` verdict, gas, `agree` |
-| `zk_submit` | VerifyParams | simulated first (not sent if it reverts, unless `force`), then a signed tx |
-| `zk_register` | `{vk \| rawVk+curve, label, force}` | id, tx, or the revert reason |
-| `zk_circuit` | `{circuitId}` | registration and raw VK (recovered from the stored prepared VK) |
+| `zk_status` | - | nodes, heads, rollup and verifier addresses |
+| `zk_rollup` | - | committed / finalized batch counts, `stateRoot`, `headRoot` |
+| `zk_verify` | `{calldata}`: `StarkVerifier.verify(prevRoot, newRoot, txs, proof)` | native verdict, on-chain verdict (with gas), `agree` |
 | `zk_subscribe` | `["heads" \| "events" \| "all", {node}?]` | sub id, then `zk_subscription` notifications |
 | `eth_* net_* web3_* anvil_* evm_* debug_* trace_* txpool_*` | array | forwarded to the node unchanged |
 
-VerifyParams: `{ vk | rawVk+curve | circuitId, proof: <snarkjs JSON or 0x bytes>,
-publicSignals | inputs: [decimal or 0x strings], register?, force?, gas?, node? }`.
-Inputs are strings on purpose, so you can send values `>= r` and watch them
-get rejected.
+If `agree` is ever `false`, the native and on-chain verifiers diverge, and
+the daemon logs a `WARN`.
 
-A verdict looks like this:
+## The rollup and its STARK
 
-```json
-{"circuitId":"0x15fa…","curve":"bn254","local":{"ok":false,"reason":"proof.A: not on curve","reverts":false,"micros":2100},
- "onchain":{"ok":false,"gas":781372,"block":26429604},"agree":true}
+`contracts/src/stark/ZKRollup.sol` is a validity rollup. The sequencer posts
+each batch's transfers as calldata with a claimed post-state root
+(`commitBatch`). A batch becomes final only when `StarkVerifier` accepts a
+proof that those exact txs move the last finalized root to the claimed one
+(`finalizeBatch`, permissionless, in order).
+
+```
+zkrollup deploy | run -n 3 -b 4 | attack | status | gen-sol | fixture
 ```
 
-If `agree` is ever `false`, either the native or the on-chain verifier has a
-bug. The daemon logs a `WARN` when it happens.
+The AIR (`zknet-core/src/stark/air.rs`) has T = 2048·txs rows and 18 columns:
 
-## Plugging in a Rust prover
+- Each transfer is two Merkle updates (a debit, then a credit) of a depth-7,
+  128-account Poseidon-style tree.
+- Each update hashes the old leaf to the old root (lane O) and the new leaf to
+  the new root (lane N). The two lanes share siblings and direction bits.
+- Constraints:
+  - Poseidon rounds.
+  - Absorbing by direction bit.
+  - Root continuity between updates.
+  - `bn = bo ± amt`.
+  - A 64-bit range check on every new balance.
+  - Path bits must equal the tx's account.
+  - Boundary constraints: row 0 equals prevRoot, and the last row equals newRoot.
+- The tx data is interpolated over the update-end rows. The proof is therefore
+  bound to the calldata the verifier hashed.
 
-Add the SDK as a path dependency:
-
-```toml
-[dependencies]
-zknet-sdk = { path = "../ivie/client/crates/zknet-sdk" }
-```
+Raw oracle over the STARK verifier (`zknet_sdk::stark`):
 
 ```rust
-use zknet_sdk::{Zknet, Req, core::{Curve, U256, verify::bn254}};
-
-let raw_vk = bn254::vk_bytes(&vk.alpha_g1, &vk.beta_g2, &vk.gamma_g2, &vk.delta_g2, &vk.gamma_abc_g1);
-let proof  = bn254::proof_bytes(&p.a, &p.b, &p.c);           // ark-groth16 Proof<Bn254>
-let mut zk = Zknet::connect()?;                               // or .on("strict")
-zk.register_raw(Curve::Bn254, &raw_vk, "my circuit")?;
-let v = zk.verify(Req::raw(Curve::Bn254, &raw_vk, &proof, &[U256::from(33)]))?;
-let snap = zk.snapshot()?;                                    // try a submit, then roll back
-zk.submit(Req::raw(Curve::Bn254, &raw_vk, &proof, &[U256::from(33)]))?;
-zk.revert(&snap)?;
+use zknet_sdk::stark::{self, Chain, Claim, Native, Options, Oracle, State, Tx};
+let mut s = State::genesis();
+let c = Claim::from_proven(&stark::prove(&mut s, &txs)?);   // honest
+let mut o = Native::default();                               // or Chain::new(Zknet::connect()?)?
+o.ask(&c);                                                   // Ok(()) or Err(Pow | Ood | TraceMerkle | FriMerkle{layer} | Fold{layer,q} | LastLayer{q} | ...)
+// adversarial prover: edit the trace, claim a false root, fake H(z)
+let lie = Options { claim_new_root: Some(other.root()), unchecked: true, fake_ood: true };
+stark::prove_with(&mut s, &txs, &lie, |trace| { /* trace[col][row] */ })?;
 ```
 
-`zknet_core::verify(curve, raw_vk, proof, inputs)` is the same check with no
-daemon. It takes about 2 ms, so you can run it in a test loop or a fuzzer.
+`crates/prover/src/main.rs` is the scratch file built on this
+(`cargo run --release -p prover [-- chain]`).
+`tests/stark_oracle.rs` checks that the native and on-chain verifiers give the
+same reason for 25 tamper and forgery cases. `contracts/test/Stark.t.sol` runs
+the Rust-generated fixtures through the contracts.
 
-## Recommendations for building the prover
+Where lies get caught (from `zkrollup attack`):
 
-1. **Start from `ark-groth16`, then replace it piece by piece.** Its
-   equation, VK layout (`gamma_abc_g1` is the registry's `IC`) and point
-   types match this verifier exactly (see `examples/ark_prover.rs`). Write
-   your own prover in stages: witness → R1CS → QAP (`ark-poly`
-   `Radix2EvaluationDomain` for the iFFT/FFT and the coset division by Z) →
-   the three MSMs for A, B and C. Keep `ark-ff`/`ark-ec` for field and curve
-   arithmetic at first. Check each stage against ark-groth16 **with the same
-   r and s blinding values**: the proofs should be byte-identical, which is a
-   much sharper check than "it verifies."
-2. **Test in three layers.** First `zknet_core::verify` (fast, no chain), then
-   `zk_verify` (native vs EVM, plus gas), then `zk_submit` inside
-   `evm_snapshot`/`evm_revert`. Use `fast` for iteration and `strict` when
-   timing or the 12 s slot behavior matters.
-3. **Reuse the circom circuits for cross-checks.** `circuits/build/*/` holds
-   real snarkjs proofs and zkeys. A Rust prover that reads the `.r1cs` and the
-   zkey (via `ark-circom` or your own parser) and proves `multiplier` should
-   produce proofs that verify under the **already registered** circuit id.
-   That tests your QAP against an independent implementation.
-4. **Setup hygiene.** gamma and delta must be independent. The registry
-   refuses gamma == delta, because under such a VK anyone can forge. A seeded
-   RNG is fine for tests, but treat the seed as toxic waste.
-5. **Public inputs.** Reduce them mod r yourself, because the verifier
-   rejects values `>= r` instead of reducing them. Replay protection is
-   keyed on the inputs, not the proof (proofs re-randomize). If a statement
-   should be submittable more than once, or exactly once per user, put a
-   nonce or nullifier in the public inputs.
-6. **Keep the public-input count small.** Gas is about 228k for 1 input,
-   plus about 6.7k per extra input on BN254. Hashing many values into one
-   input trades gas for constraints.
-7. **Fuzz the boundary.** Run `proptest` over proof-byte mutations with
-   `zk_verify` in the loop, and require `agree == true` every time.
-   `tools/zk.mjs mutations()` lists the attack cases already covered.
-8. **Performance.** Enable `ark-ec`/`ark-ff`'s `parallel` feature for
-   multithreaded MSM and FFT, always build `--release` (the workspace already
-   sets opt-level 3 for dependencies), and time the MSM and FFT stages
-   separately. MSM usually dominates.
-9. **BLS12-381 works the same way** (`verify::bls12381::*`, 512-byte
-   proofs). Note that circomlib's Poseidon constants are BN254-only.
+| lie | first failing check |
+|---|---|
+| same proof, different statement (root, txs, prevRoot) | `Pow`: the statement seeds the Fiat-Shamir channel, so every challenge changes |
+| opened trace value changed | `TraceMerkle`: not the committed data |
+| re-proved with a false newRoot | `Ood`: H(z) ≠ the constraints at z |
+| false newRoot, and H(z) faked to pass the OOD check | `LastLayer`: the DEEP quotient isn't low degree, and FRI catches it |
+| extra coin written into the trace | `Ood` |
 
 ## Notes
 
-- Transactions are signed only for nodes that answer `anvil_nodeInfo`.
-  zknet uses chain id 1, so this guard keeps a mistyped `--node` from ever
-  signing for mainnet.
-- Nonces are fetched per transaction and receipts are polled directly. Both
-  are needed because `evm_revert` rewinds account nonces and can recreate
-  identical transaction hashes.
-- The socket is mode 0600. Any local process running as your user can use
-  it and sign with the dev key, and nothing else can.
+- `zkrollup` fetches nonces per transaction and polls receipts directly.
+  Both are needed because `evm_revert` (used by `attack`) rewinds account
+  nonces and can recreate identical transaction hashes.
+- The socket is mode 0600, so only processes running as your user can use it.
+- Contract addresses come from CREATE2 over the compiled artifacts
+  (`zknet_core::stark::deploy`). Rebuild contracts and rerun `deploy` after
+  changing them; the new code gets new addresses.

@@ -1,4 +1,4 @@
-// Minimal JSON-RPC client + helpers shared by the chain and e2e scripts.
+// Minimal JSON-RPC client + helpers shared by the chain scripts.
 import { keccak_256 } from '@noble/hashes/sha3.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 

@@ -1,7 +1,7 @@
 {
   "name": "zknet",
   "version": "1.0.0",
-  "description": "Mainnet-fidelity anvil testnet + hardened Groth16 verifier (BN254 & BLS12-381)",
+  "description": "Mainnet-fidelity anvil testnet + a StarkWare-style STARK rollup verified on L1",
   "scripts": {
     "chain:start": "node chain/zknet.mjs start",
     "chain:start:fast": "node chain/zknet.mjs start --fast",
@@ -9,15 +9,11 @@
     "chain:status": "node chain/zknet.mjs status",
     "chain:snapshot": "node chain/snapshot.mjs",
     "fidelity": "node chain/fidelity.mjs",
-    "circuits": "node circuits/build.mjs",
-    "vectors": "node tools/gen-vectors.mjs",
     "test:contracts": "cd contracts && forge test",
-    "test:deep": "cd contracts && FOUNDRY_PROFILE=deep forge test",
-    "e2e": "node e2e/run.mjs",
-    "submit": "node tools/submit.mjs",
-    "test": "npm run test:contracts && npm run fidelity && npm run e2e",
+    "test": "npm run test:contracts && npm run test:client && npm run fidelity",
     "zknetd": "cargo run --release --manifest-path client/Cargo.toml -p zknetd --",
-    "test:client": "cargo test --release --manifest-path client/Cargo.toml"
+    "test:client": "cargo test --release --manifest-path client/Cargo.toml",
+    "rollup": "cargo run --release --manifest-path client/Cargo.toml -p rollup --"
   },
   "author": "",
   "license": "ISC",
@@ -25,8 +21,6 @@
   "dependencies": {
     "@noble/curves": "^2.4.0",
     "@noble/hashes": "^2.4.0",
-    "circomlib": "^2.0.5",
-    "snarkjs": "^0.7.6",
     "viem": "^2.57.20"
   },
   "private": true
