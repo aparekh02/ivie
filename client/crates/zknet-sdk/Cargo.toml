@@ -1,0 +1,21 @@
+[package]
+name = "zknet-sdk"
+description = "Blocking client for the zknetd socket: plug a Rust prover into the zknet verifier"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+zknet-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+ark-groth16 = "0.6"
+ark-relations = "0.6"
+ark-snark = "0.6"
+ark-std = { version = "0.6", features = ["std"] }
+ark-ec.workspace = true
+ark-ff.workspace = true
+anyhow.workspace = true

@@ -1,0 +1,17 @@
+[package]
+name = "zknetd"
+description = "Light Rust client for zknet: follows the anvil nodes and serves the verifier on a Unix socket"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+zknet-core.workspace = true
+alloy = { version = "2", default-features = false, features = ["std", "providers", "provider-http", "reqwest", "signer-local", "network", "rpc-types", "sol-types", "json-rpc", "rpc-client", "transports"] }
+tokio = { version = "1", features = ["full"] }
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+clap = { version = "4", features = ["derive", "env"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

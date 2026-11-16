@@ -1,0 +1,17 @@
+[package]
+name = "zknet-core"
+description = "zknet wire formats, circuit ids, and a native Groth16 verifier that follows the on-chain rules"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+alloy-primitives.workspace = true
+ark-bn254.workspace = true
+ark-bls12-381.workspace = true
+ark-ec.workspace = true
+ark-ff.workspace = true
+num-bigint.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
