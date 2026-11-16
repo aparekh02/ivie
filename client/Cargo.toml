@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/zknet-core", "crates/zknetd", "crates/zknet-sdk"]
+members = ["crates/zknet-core", "crates/zknetd", "crates/zknet-sdk", "crates/prover"]
 
 [workspace.package]
 edition = "2024"
