@@ -200,6 +200,19 @@ Before trusting a circuit id from a third party, check it yourself:
 registration is permissionless, and a VK proves nothing about which circuit
 it came from.
 
+## 6. Rust client and plug-in socket (`client/`)
+
+`zknetd` follows both nodes and serves the verifier over a Unix socket
+(`chain/.run/zknetd.sock`, newline-delimited JSON-RPC). `zknet-sdk` is the
+Rust client for that socket, and `zknet-core` has the encoders plus a native
+verifier that reproduces all 317 vector verdicts. See
+[client/README.md](client/README.md).
+
+```
+npm run zknetd
+cd client && cargo run --release -p zknet-sdk --example ark_prover
+```
+
 ## Layout
 
 ```
@@ -208,4 +221,5 @@ contracts/  src/ (libraries, registry, generated/), test/ (Registry, SnarkjsDiff
 circuits/   src/*.circom, build.mjs
 tools/      zk.mjs, gen-vectors.mjs, gen-verifier.mjs, submit.mjs
 e2e/        run.mjs
+client/     zknet-core (encoders, native verifier), zknetd (daemon + socket), zknet-sdk (Rust client, examples)
 ```

@@ -15,7 +15,9 @@
     "test:deep": "cd contracts && FOUNDRY_PROFILE=deep forge test",
     "e2e": "node e2e/run.mjs",
     "submit": "node tools/submit.mjs",
-    "test": "npm run test:contracts && npm run fidelity && npm run e2e"
+    "test": "npm run test:contracts && npm run fidelity && npm run e2e",
+    "zknetd": "cargo run --release --manifest-path client/Cargo.toml -p zknetd --",
+    "test:client": "cargo test --release --manifest-path client/Cargo.toml"
   },
   "author": "",
   "license": "ISC",
