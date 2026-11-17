@@ -1,143 +1,135 @@
-# ivie — a QAOA-based attack architecture for ZK-proof hashes
+# ivie
 
-**ivie** is a quantum attack lab for the hashes that commit state in STARK / zk
-systems. The hashes that make these proofs cheap — arithmetization-friendly
-permutations like Poseidon, built from low-degree algebraic rounds — are exactly
-the ones a structured quantum/algebraic attack can take apart. ivie builds that
-attack, recovers **verified** hash preimages and second preimages (the primitive
-that lets a committed Merkle state root be tampered with), and measures the round
-count at which it stops working.
+ivie attacks the hashes that ZK systems use to commit state. Proofs like STARKs
+lean on arithmetization-friendly hashes (Poseidon and friends), which are built
+from low-degree algebraic rounds to keep proving cheap. That low degree is also
+a weakness. ivie turns a reduced-round hash into a polynomial system and solves
+it, recovering preimages and collisions. A collision on a leaf is enough to swap
+a wallet balance while the Merkle root the verifier committed to stays the same.
 
-It pairs two engines over the field `F_p`, `p = 2^251 + 17·2^192 + 1`:
+It runs two engines over `F_p` (`p = 2^251 + 17·2^192 + 1`):
 
-- a **QAOA** search that drives a variational quantum circuit down a
-  Hamming-distance cost between a candidate's hash and the target, and
-- an **algebraic core** (Gröbner-style elimination + XL/Macaulay linearization)
-  that eliminates the round system to a polynomial and solves it directly.
+- a QAOA circuit that searches for a preimage by minimizing the Hamming distance
+  between a candidate's hash and the target, and
+- an algebraic solver that eliminates the round system down to one polynomial
+  and finds its roots directly (plus an XL/Macaulay variant).
 
-ivie was developed and validated against a self-contained STARK rollup testbed —
-the `zknet` chain bundled in this repo — which is where the attack runs against a
-real prover, verifier and on-L1 commitment, end to end. The chain is the
-workbench; ivie is the program.
+I built and tested all of this against the STARK rollup in this repo (the
+`zknet` chain). The chain isn't the point; it's just a realistic place to run
+the attack against an actual prover, verifier, and on-chain commitment. The
+honest finding is a curve: the attack is cheap at a few rounds and impossible at
+the 127 the hash actually uses.
 
 ```
 cd client
-cargo run --release -p quantum                 # full lab: attack + margin curve
-cargo run --release -p quantum -- preimage 5   # elimination preimage attack at R rounds
-cargo run --release -p quantum -- qaoa         # QAOA preimage amplification (statevector)
-cargo run --release -p quantum -- forge        # second preimage -> tamperable leaf
-cargo run --release -p quantum -- margin       # degree-vs-rounds security margin
+cargo run --release -p quantum                 # everything, plus the margin curve
+cargo run --release -p quantum -- preimage 5   # recover a 5-round preimage
+cargo run --release -p quantum -- qaoa         # QAOA statevector run
+cargo run --release -p quantum -- forge        # collision -> swapped wallet value
+cargo run --release -p quantum -- margin       # degree vs rounds
 ```
 
-## The architecture (`client/crates/quantum`)
+## How it works (`client/crates/quantum`)
 
-| module | role |
+The leaf hash is `leaf(b) = P([b, 0, tag])[0]`, where `P` is the Poseidon
+permutation. For `r` rounds the attacker sees a committed leaf and wants a `b`
+that hashes to it.
+
+| module | what it does |
 |---|---|
-| `poseidon` | models the in-AIR Poseidon permutation (x³ S-box, t=3 MDS) at a tunable round count `R`, both numerically (reusing the real round map) and symbolically over `F_p[b]` |
-| `qaoa` | exact statevector QAOA over a diagonal Hamming-distance cost `C(x) = popcount(low_bits(leaf_r(x)) ⊕ low_bits(target))`; the graded landscape lets the circuit concentrate amplitude on the preimage |
-| `groebner` | eliminates the round system to one univariate `f(b) = leaf_r(b) − target` (the preimage ideal's Gröbner basis under elimination) and root-finds it: `gcd(f, x^p − x)` then Cantor–Zassenhaus; `fp_roots` enumerates preimages to exhibit collisions |
-| `xl` | keeps the interior round states as variables and solves the degree-3 system by XL/Macaulay linearization, reporting the **solving degree** `D*` — the Gröbner-family security metric a round count exists to inflate |
-| `attack` | chains it end to end (second preimage → tamperable leaf) and builds the **margin curve**; emits the visual-memory JSON |
-| `grover` / `oracle` | real Grover simulation against the *keccak* floors (Merkle truncation, Fiat-Shamir grind) — the non-algebraic baseline the margin compares against |
+| `poseidon` | the round map at a chosen `r`, both as real field ops and symbolically over `F_p[b]` |
+| `groebner` | composes the rounds into `f(b) = leaf_r(b) − target` (degree `3^r`), then finds its `F_p` roots with `gcd(f, x^p − x)` and Cantor–Zassenhaus |
+| `xl` | the multivariate version: keep each round's state as variables, linearize (XL/Macaulay), and read off the solving degree `D*` |
+| `qaoa` | an exact statevector QAOA whose cost is the Hamming distance to the target's output bits |
+| `attack` | ties it together (collision → tampered leaf) and computes the margin curve |
+| `grover`, `oracle` | a Grover simulation on the keccak hashes (Merkle, Fiat-Shamir), as a baseline to compare against |
 
-`viz/index.html` is a self-contained visual-memory page rendering the attack
-pipeline, the degree wall, the XL solving-degree table and the QAOA distribution.
-See [client/crates/quantum/README.md](client/crates/quantum/README.md).
+Every recovered `b` is checked against the real permutation before I count it.
+There's a self-contained page at `client/crates/quantum/viz/index.html` with the
+pipeline, the degree curve, the XL table, and the QAOA distribution. The crate's
+own README has more.
 
-### What it finds (measured on the testbed)
+## Results
 
-- **QAOA** amplifies a windowed preimage **7.8×** over the uniform baseline
-  (`n = 12`, `p = 2` layers) — the quantum read of the algebraic structure.
-- **Elimination** recovers a blind reduced-round preimage from a committed leaf
-  alone, verified against the real hash: **R = 5 in 0.7 s, R = 7 in 35 s**.
-- **Second preimages** at R = 3 and R = 5 → a wallet value swaps while the leaf
-  hash, path and committed root stay fixed, so the verifier's
-  commit-before-challenge check passes on a false state.
-- **XL** reaches solving degree **D\* = 9 at R = 2** (840×715 Macaulay matrix),
-  preimage verified.
+Measured on the testbed:
 
-### The margin (the research result)
+- QAOA raises the chance of sampling a preimage to about 7.8× the uniform rate
+  (12 qubits, 2 layers).
+- The algebraic solver recovers a preimage from the committed leaf alone: 5
+  rounds in 0.7 s, 7 rounds in 35 s, both verified.
+- At 3 and 5 rounds it finds a second input with the same leaf hash. Swap the
+  balance to that input and the hash, path, and root don't change, so the
+  verifier accepts it.
+- XL hits solving degree 9 at 2 rounds (an 840×715 Macaulay matrix).
 
-The elimination polynomial has degree `3^r`, so `log2` degree grows `1.585`
-bits/round. The attack is feasible only while that polynomial can be built:
-degree crosses `2^64` at r = 41, `2^96` at r = 61, and the Grover preimage line
-(`2^125`) at r = 80. At the deployed `ROUNDS = 127` the degree is `3^127 ≈ 2^201`
-— unbuildable, leaving only a `2^125` Grover search. The round count is the whole
-margin, and it is sized correctly.
+The elimination polynomial has degree `3^r`, so its size grows about 1.585 bits
+per round. It passes `2^64` around round 41, `2^96` around round 61, and the
+cost of a plain Grover preimage search (`2^125`) around round 80. At 127 rounds
+the polynomial is `3^127 ≈ 2^201`; you can't even write it down, and Grover is
+the only thing left. So the round count is doing its job.
 
-### Honest scope
+## What this isn't
 
-- Every preimage is recovered from a committed target alone and verified against
-  the genuine permutation. The breaks are real at reduced rounds.
-- At full rounds the hash is **not** broken; the deliverable is the margin, not a
-  usable exploit, and ivie never fabricates one or weakens the verifier.
-- Keccak-256 (the Merkle / Fiat-Shamir hash) has no low-degree structure — it
-  stays Grover-only (`2^80`). **Shor is inert**: nothing here has a hidden
-  subgroup to recover. Only the arithmetization-friendly hash is algebraically
-  attackable.
+The full 127-round hash is not broken, and I don't pretend otherwise or weaken
+the verifier to fake it. Attacking round-reduced versions and extrapolating is
+the standard way to measure these hashes.
 
----
+Keccak-256 (the Merkle and Fiat-Shamir hash) has no algebraic structure to
+exploit, so it's Grover-only (`2^80`). Shor doesn't apply to any of this: it's
+all hashes, no discrete log or hidden subgroup. The only lever quantum gives you
+here is a Grover-style square-root, and the algebraic attack only beats that
+while `3^r` is small.
 
-## The testbed (`chain/`, `contracts/`, `client/`)
+## The testbed
 
-Where ivie runs: a mainnet-fidelity local chain with a StarkWare-modeled validity
-rollup, so the attack targets a real prover, verifier and on-L1 commitment rather
-than a toy.
+A local chain that mimics Ethereum mainnet, with a StarkWare-style validity
+rollup on top. It's here so the attack has a real target instead of a toy.
 
 ```
 npm install
-npm run chain:start:fast                         # or chain:start for strict 12 s slots
-cd contracts && forge build && forge test        # verifier + rollup tests on Rust-made proofs
+npm run chain:start:fast                         # or chain:start for 12 s slots
+cd contracts && forge build && forge test
 cd ../client
-cargo run --release -p rollup -- deploy          # CREATE2-deploy the rollup contracts
-cargo run --release -p rollup -- run -n 3 -b 4   # sequencer + prover: commit, prove, finalize
-cargo run --release -p zknetd                    # light client + plug-in socket
+cargo run --release -p rollup -- deploy
+cargo run --release -p rollup -- run -n 3 -b 4   # commit, prove, finalize
+cargo run --release -p zknetd                    # light client + socket
 ```
 
-Requires foundry (anvil/forge/cast ≥ 1.8), node ≥ 22, and Rust 1.9x.
+Needs foundry (anvil/forge/cast ≥ 1.8), node ≥ 22, Rust 1.9x.
 
-### The chain (`chain/`)
+**Chain (`chain/`).** `snapshot.mjs` reads mainnet once and freezes it (config,
+latest header, canonical bytecode) into a committed file, so the chain boots
+offline and the same way every time. `zknet.mjs start` runs anvil as mainnet at
+November 2026: chain id 1, Osaka rules, mainnet gas limit, base fee and height,
+12 s slots, and the real system contracts and singletons installed with mainnet
+bytecode. `fidelity.mjs` checks it against known answers (precompiles, opcodes,
+limits, the base-fee recurrence, code hashes): 53 pass, 0 fail, 2 known gaps
+(anvil's fixed blob schedule and missing consensus layer, both reported, not
+hidden).
 
-`chain/snapshot.mjs` freezes mainnet once (EIP-7910 `eth_config`, latest header,
-canonical bytecode) into a committed snapshot, so the chain boots offline and
-reproducibly. `chain/zknet.mjs start` launches anvil configured to behave like
-Ethereum mainnet as of November 2026: chain id 1, Osaka rules, mainnet gas limit
-/ base fee / height, 12 s beacon-aligned slots, and mainnet system contracts and
-singletons (EIP-4788/2935/7002/7251, Deposit, Multicall3, Permit2, CreateX, Safe
-factory, WETH9, CREATE2 deployer) installed with mainnet bytecode.
-`chain/fidelity.mjs` checks all of it against known-answer vectors (precompiles,
-opcodes, size/gas limits, the EIP-1559 recurrence, system code hashes): currently
-**53 pass, 0 fail, 2 known gaps** (anvil's hard-coded blob schedule and absent
-consensus layer, reported as `GAP`, not hidden).
+**Rollup (`contracts/src/stark/`, `client/`).** `commitBatch(txs, claimedRoot)`
+posts the L2 transfers as calldata; `finalizeBatch(i, txs, proof)` runs
+`StarkVerifier` on a STARK proof that those txs take the last root to the claimed
+one, and only then does `stateRoot` move. The proof system follows StarkWare's
+stack (Stone, SHARP, Starknet's L1 contracts):
 
-### The STARK rollup (`contracts/src/stark/`, `client/`)
+- field p = 2^251 + 17·2^192 + 1; LDE blowup 16, bit-reversed
+- Merkle over keccak truncated to 160 bits, batched multi-proofs
+- FRI: layer 0 is the DEEP composition, then fold by 8, last layer as coefficients
+- StarkWare-style channel with rejection sampling and prefixed proof-of-work
+- 18 queries, 24-bit grinding, ~96 conjectured bits
+- AIR: 18 columns, 55 constraints; each transfer is two Merkle-path updates through a Poseidon state tree, balances range-checked to 64 bits, start and end roots pinned
 
-A validity rollup verified on L1 the way production zk-rollups verify blocks:
-`ZKRollup.commitBatch(txs, claimedRoot)` posts L2 transfers as calldata, then
-`finalizeBatch(i, txs, proof)` runs `StarkVerifier` on a STARK proof that applying
-those txs to the last finalized root yields the claimed root before `stateRoot`
-moves. The proof system is modeled part by part on StarkWare's stack (Stone,
-SHARP, Starknet's L1 contracts):
-
-- **Field:** p = 2^251 + 17·2^192 + 1. **LDE:** blowup 16, bit-reversed.
-- **Merkle:** keccak truncated to 160 bits, batched multi-proofs.
-- **FRI:** layer 0 is the DEEP composition, then fold by 8; last layer as coefficients.
-- **Channel:** StarkWare-style rejection sampling + prefixed proof-of-work.
-- **Security:** 18 queries, 24-bit grinding, ~96 conjectured bits.
-- **AIR:** 18 columns, 55 constraints; each transfer is two Merkle-path updates through a Poseidon-style state tree, balances range-checked to 64 bits, start/end roots pinned.
-
-The Rust prover (`zknet-core::stark`) and a native twin of the verifier report the
-same reject reason as the contract. `zknetd` follows the L1 nodes and serves a
-Unix socket; `zknet-sdk` is the Rust client and exposes the verifier as a raw
-oracle. See [client/README.md](client/README.md).
+The Rust prover and a native copy of the verifier give the same reject reason as
+the contract. `zknetd` follows the L1 nodes and serves a Unix socket; `zknet-sdk`
+is the client for it. See [client/README.md](client/README.md).
 
 ## Layout
 
 ```
-client/crates/quantum/   ivie: the attack architecture (poseidon, qaoa, groebner, xl, attack) + viz/
-chain/                   zknet.mjs (launcher), snapshot.mjs, mainnet-snapshot.json, fidelity.mjs
+client/crates/quantum/   ivie: poseidon, qaoa, groebner, xl, attack, viz/
+chain/                   zknet.mjs, snapshot.mjs, mainnet-snapshot.json, fidelity.mjs
 contracts/src/stark/     StarkVerifier.sol, ZKRollup.sol, generated/RollupPeriodic.sol
-contracts/test/          Stark.t.sol, vectors/stark/ (fixtures from `zkrollup fixture`)
-client/crates/           zknet-core (STARK: field, hash, AIR, prover, verifier), zknetd (daemon + socket),
-                         zknet-sdk (socket client, oracles), rollup (zkrollup sequencer/prover)
+contracts/test/          Stark.t.sol, vectors/stark/
+client/crates/           zknet-core (field, hash, AIR, prover, verifier), zknetd, zknet-sdk, rollup
 ```
