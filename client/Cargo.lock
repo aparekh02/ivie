@@ -2966,6 +2966,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "quantum"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "ark-ff 0.6.0",
+ "ark-poly",
+ "rayon",
+ "serde",
+ "serde_json",
+ "zknet-core",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"

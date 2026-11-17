@@ -1,0 +1,19 @@
+[package]
+name = "quantum"
+description = "Quantum algebraic attack lab for the in-AIR Poseidon hash: Groebner/elimination preimage solver (reduced-round), QAOA cost-Hamiltonian search, and a solving-degree margin curve, with a visual-memory JSON emitter"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "qattack"
+path = "src/main.rs"
+
+[dependencies]
+zknet-core.workspace = true
+alloy-primitives.workspace = true
+rayon.workspace = true
+ark-ff.workspace = true
+ark-poly.workspace = true
+serde.workspace = true
+serde_json.workspace = true
