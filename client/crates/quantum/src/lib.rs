@@ -9,3 +9,4 @@
 
 pub mod grover;
 pub mod oracle;
+pub mod poseidon;
