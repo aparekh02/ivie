@@ -8,5 +8,6 @@
 //! arithmetization-friendly in-AIR hash, added on top of this layer.
 
 pub mod grover;
+pub mod groebner;
 pub mod oracle;
 pub mod poseidon;
