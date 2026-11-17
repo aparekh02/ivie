@@ -19,6 +19,7 @@ a Unix socket that local programs plug into.
 | `zknet-sdk` | Blocking socket client and the STARK verifier as a raw oracle (`Native` / `Chain`), plus the `watch` example. |
 | `rollup` | `zkrollup`: deployer, sequencer, prover and attack harness for `ZKRollup.sol`. Signs with anvil dev key 4, and only for nodes that report as anvil. |
 | `prover` | Research scratch file. |
+| `quantum` | `qattack`: Grover simulation against the verifier's security floors, proof injection, and parameter extrapolation (see `crates/quantum/README.md`). |
 
 It is not a full node. reth can't follow anvil, because anvil has no p2p
 and no engine API. So this is a thin client built on **alloy**, the RPC and

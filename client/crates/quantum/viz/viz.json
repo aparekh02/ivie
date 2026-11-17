@@ -1,0 +1,569 @@
+{
+  "field_bits": 251.0,
+  "full_rounds": 127,
+  "margin": {
+    "field_bits": 251.0,
+    "grover_preimage_bits": 125.5,
+    "full_rounds": 127,
+    "full_degree_log2": 201.29023759158684,
+    "points": [
+      {
+        "rounds": 1,
+        "degree_log2": 1.5849625007211563,
+        "work_log2": 9.556506054671928,
+        "materializable": true,
+        "ran": true,
+        "recovered": true
+      },
+      {
+        "rounds": 2,
+        "degree_log2": 3.1699250014423126,
+        "work_log2": 11.141468555393084,
+        "materializable": true,
+        "ran": true,
+        "recovered": true
+      },
+      {
+        "rounds": 3,
+        "degree_log2": 4.754887502163469,
+        "work_log2": 12.72643105611424,
+        "materializable": true,
+        "ran": true,
+        "recovered": true
+      },
+      {
+        "rounds": 4,
+        "degree_log2": 6.339850002884625,
+        "work_log2": 14.311393556835398,
+        "materializable": true,
+        "ran": true,
+        "recovered": true
+      },
+      {
+        "rounds": 5,
+        "degree_log2": 7.924812503605781,
+        "work_log2": 15.896356057556552,
+        "materializable": true,
+        "ran": true,
+        "recovered": true
+      },
+      {
+        "rounds": 6,
+        "degree_log2": 9.509775004326938,
+        "work_log2": 17.48131855827771,
+        "materializable": true,
+        "ran": true,
+        "recovered": true
+      },
+      {
+        "rounds": 7,
+        "degree_log2": 11.094737505048094,
+        "work_log2": 19.066281058998868,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 8,
+        "degree_log2": 12.67970000576925,
+        "work_log2": 20.651243559720022,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 9,
+        "degree_log2": 14.264662506490406,
+        "work_log2": 22.236206060441177,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 10,
+        "degree_log2": 15.849625007211563,
+        "work_log2": 23.821168561162334,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 11,
+        "degree_log2": 17.43458750793272,
+        "work_log2": 25.406131061883492,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 12,
+        "degree_log2": 19.019550008653876,
+        "work_log2": 26.991093562604647,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 13,
+        "degree_log2": 20.60451250937503,
+        "work_log2": 28.5760560633258,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 14,
+        "degree_log2": 22.18947501009619,
+        "work_log2": 30.161018564046962,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 15,
+        "degree_log2": 23.774437510817343,
+        "work_log2": 31.745981064768117,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 16,
+        "degree_log2": 25.3594000115385,
+        "work_log2": 33.33094356548927,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 17,
+        "degree_log2": 26.94436251225966,
+        "work_log2": 34.91590606621043,
+        "materializable": true,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 18,
+        "degree_log2": 28.529325012980813,
+        "work_log2": 36.50086856693159,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 19,
+        "degree_log2": 30.11428751370197,
+        "work_log2": 38.08583106765274,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 20,
+        "degree_log2": 31.699250014423125,
+        "work_log2": 39.670793568373895,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 21,
+        "degree_log2": 33.28421251514428,
+        "work_log2": 41.25575606909506,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 22,
+        "degree_log2": 34.86917501586544,
+        "work_log2": 42.84071856981621,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 23,
+        "degree_log2": 36.45413751658659,
+        "work_log2": 44.425681070537365,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 24,
+        "degree_log2": 38.03910001730775,
+        "work_log2": 46.01064357125853,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 25,
+        "degree_log2": 39.62406251802891,
+        "work_log2": 47.59560607197968,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 26,
+        "degree_log2": 41.20902501875006,
+        "work_log2": 49.180568572700835,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 27,
+        "degree_log2": 42.79398751947122,
+        "work_log2": 50.765531073422,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 28,
+        "degree_log2": 44.37895002019238,
+        "work_log2": 52.35049357414315,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 29,
+        "degree_log2": 45.96391252091353,
+        "work_log2": 53.935456074864305,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 30,
+        "degree_log2": 47.548875021634686,
+        "work_log2": 55.52041857558546,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 31,
+        "degree_log2": 49.13383752235585,
+        "work_log2": 57.10538107630662,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 32,
+        "degree_log2": 50.718800023077,
+        "work_log2": 58.690343577027775,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 33,
+        "degree_log2": 52.303762523798156,
+        "work_log2": 60.27530607774893,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 34,
+        "degree_log2": 53.88872502451932,
+        "work_log2": 61.86026857847009,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 35,
+        "degree_log2": 55.47368752524047,
+        "work_log2": 63.445231079191245,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 36,
+        "degree_log2": 57.058650025961626,
+        "work_log2": 65.03019357991239,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 37,
+        "degree_log2": 58.64361252668278,
+        "work_log2": 66.61515608063355,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 38,
+        "degree_log2": 60.22857502740394,
+        "work_log2": 68.20011858135472,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 39,
+        "degree_log2": 61.813537528125096,
+        "work_log2": 69.78508108207586,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      },
+      {
+        "rounds": 40,
+        "degree_log2": 63.39850002884625,
+        "work_log2": 71.37004358279702,
+        "materializable": false,
+        "ran": false,
+        "recovered": false
+      }
+    ],
+    "cross_64": 41,
+    "cross_96": 61,
+    "cross_grover": 80
+  },
+  "forgery": {
+    "rounds": 5,
+    "committed_target": "1180513587140516618714745386901411409042928662435219143760196309430336137940",
+    "recovered_preimage": "27945242474066556310175600081595848960555213549343697846186522050169224083",
+    "verified": true,
+    "preimage_count": 3,
+    "second_preimage": "27945242474066556310175600081595848960555213549343697846186522050169224083",
+    "original_value": "1000000",
+    "tamperable": true
+  },
+  "xl": [
+    {
+      "rounds": 1,
+      "vars": 1,
+      "gens": 1,
+      "solving_degree": 3,
+      "matrix_rows": 1,
+      "matrix_cols": 4,
+      "verified": true
+    },
+    {
+      "rounds": 2,
+      "vars": 4,
+      "gens": 4,
+      "solving_degree": 9,
+      "matrix_rows": 840,
+      "matrix_cols": 715,
+      "verified": true
+    }
+  ],
+  "qaoa": {
+    "n": 12,
+    "layers": 2,
+    "success_prob": 0.001908429468401909,
+    "uniform_prob": 0.000244140625,
+    "amplification": 7.816927102574219,
+    "marked": 1,
+    "top": [
+      [
+        71,
+        0.0021505085335662426
+      ],
+      [
+        589,
+        0.0019198963425343003
+      ],
+      [
+        42,
+        0.001908429468401909
+      ],
+      [
+        2595,
+        0.0018823034216778342
+      ],
+      [
+        1729,
+        0.0017354227053998938
+      ],
+      [
+        2487,
+        0.0016652386875574865
+      ],
+      [
+        2585,
+        0.001650896991280286
+      ],
+      [
+        374,
+        0.001646986378834657
+      ]
+    ]
+  },
+  "degree_growth": [
+    [
+      1,
+      1.5849625007211563
+    ],
+    [
+      2,
+      3.1699250014423126
+    ],
+    [
+      3,
+      4.754887502163469
+    ],
+    [
+      4,
+      6.339850002884625
+    ],
+    [
+      5,
+      7.924812503605781
+    ],
+    [
+      6,
+      9.509775004326938
+    ],
+    [
+      7,
+      11.094737505048094
+    ],
+    [
+      8,
+      12.67970000576925
+    ],
+    [
+      9,
+      14.264662506490406
+    ],
+    [
+      10,
+      15.849625007211563
+    ],
+    [
+      11,
+      17.43458750793272
+    ],
+    [
+      12,
+      19.019550008653876
+    ],
+    [
+      13,
+      20.60451250937503
+    ],
+    [
+      14,
+      22.18947501009619
+    ],
+    [
+      15,
+      23.774437510817343
+    ],
+    [
+      16,
+      25.3594000115385
+    ],
+    [
+      17,
+      26.94436251225966
+    ],
+    [
+      18,
+      28.529325012980813
+    ],
+    [
+      19,
+      30.11428751370197
+    ],
+    [
+      20,
+      31.699250014423125
+    ],
+    [
+      21,
+      33.28421251514428
+    ],
+    [
+      22,
+      34.86917501586544
+    ],
+    [
+      23,
+      36.45413751658659
+    ],
+    [
+      24,
+      38.03910001730775
+    ],
+    [
+      25,
+      39.62406251802891
+    ],
+    [
+      26,
+      41.20902501875006
+    ],
+    [
+      27,
+      42.79398751947122
+    ],
+    [
+      28,
+      44.37895002019238
+    ],
+    [
+      29,
+      45.96391252091353
+    ],
+    [
+      30,
+      47.548875021634686
+    ],
+    [
+      31,
+      49.13383752235585
+    ],
+    [
+      32,
+      50.718800023077
+    ],
+    [
+      33,
+      52.303762523798156
+    ],
+    [
+      34,
+      53.88872502451932
+    ],
+    [
+      35,
+      55.47368752524047
+    ],
+    [
+      36,
+      57.058650025961626
+    ],
+    [
+      37,
+      58.64361252668278
+    ],
+    [
+      38,
+      60.22857502740394
+    ],
+    [
+      39,
+      61.813537528125096
+    ],
+    [
+      40,
+      63.39850002884625
+    ]
+  ]
+}
