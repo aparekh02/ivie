@@ -11,3 +11,5 @@ pub mod grover;
 pub mod groebner;
 pub mod oracle;
 pub mod poseidon;
+pub mod qaoa;
+pub mod xl;
